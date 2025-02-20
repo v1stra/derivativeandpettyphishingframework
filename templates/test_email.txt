@@ -1,7 +1,0 @@
-Hello {{first_name}} {{last_name}}!
-
-This is a test email!
-
-Email sent at {{date_a}}.
-
-It works!

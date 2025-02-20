@@ -6,8 +6,8 @@ import shlex
 import argparse
 
 from os import listdir
-from config import config
-from utils import json_to_csv
+from server.config import Config
+from server.utils import json_to_csv
 from json import dumps
 from csv import DictReader
 
@@ -41,9 +41,7 @@ class Shell(cmd.Cmd):
         elif method == 'GET':
             resp = requests.get(f'{self.target}{uri}', proxies=self.proxies, verify=False)
             
-        print(f'status: {resp.status_code}')
-        
-        return resp
+        return resp, resp.status_code
     
     
     def listusers(self, group=None):
@@ -53,9 +51,9 @@ class Shell(cmd.Cmd):
             group (string, optional): Group name. Defaults to None.
         """
         if group:
-            resp = self.send_request(f'/groups/{group}', 'GET')
+            resp, sc = self.send_request(f'/groups/{group}', 'GET')
         else:
-            resp = self.send_request('/users', 'GET')
+            resp, sc = self.send_request('/users', 'GET')
             
         print(json_to_csv(resp.text))
 
@@ -77,7 +75,7 @@ class Shell(cmd.Cmd):
             'group_name': group,
             'title': title
         }
-        resp = self.send_request('/users/add', 'POST', json=data)
+        resp, sc = self.send_request('/users/add', 'POST', json=data)
         print(resp.text)
         
         
@@ -87,7 +85,7 @@ class Shell(cmd.Cmd):
         Args:
             uid (string): uid value generated for the user
         """
-        resp = self.send_request(f'/user/{uid}/delete', 'GET')
+        resp, sc = self.send_request(f'/user/{uid}/delete', 'GET')
         
         print(resp.text)
     
@@ -112,7 +110,7 @@ class Shell(cmd.Cmd):
             'envelope_sender': envelope_sender
         }
         
-        resp = self.send_request('/emails/send', 'POST', json=data)
+        resp, sc = self.send_request('/emails/send', 'POST', json=data)
         
         print(resp.text)
     
@@ -139,7 +137,7 @@ class Shell(cmd.Cmd):
     def listtemplates(self):
         """ list templates within template path
         """
-        for template in listdir("templates"):
+        for template in listdir("server/templates"):
             print(template)
         
         
@@ -166,7 +164,7 @@ class Shell(cmd.Cmd):
             'file_path': file_path
         }
 
-        resp = self.send_request('/config/payload', 'POST', json=data)
+        resp, sc = self.send_request('/config/payload', 'POST', json=data)
 
         print(resp.text)
 
@@ -174,30 +172,39 @@ class Shell(cmd.Cmd):
     def getgroup(self, group):
         """ Gets all members of a group and returns CSV """
         
-        resp = self.send_request(f'/groups/{group}', 'GET')
+        resp, sc = self.send_request(f'/groups/{group}', 'GET')
 
         print(json_to_csv(resp.text))
 
     def deletegroup(self, group):
         """ Deletes all users identified by a group name """
-        resp = self.send_request(f'/groups/{group}/delete', 'GET')
+        resp, sc = self.send_request(f'/groups/{group}/delete', 'GET')
         print(resp.text)
 
     def status(self):
-        resp = self.send_request('/emails/status', 'GET')
+        resp, sc = self.send_request('/emails/status', 'GET')
         print(resp.text)
 
     def listgroups(self):
-        resp = self.send_request('/groups', 'GET')
-        print(dumps(resp.json(), indent=1))
+        resp, sc = self.send_request('/groups', 'GET')
+        if sc == 200:
+            print(dumps(resp.json(), indent=1))
+        else:
+            print(f"invalid status: {sc}")
 
     def getuser(self, uid):
-        resp = self.send_request(f'/user/{uid}', 'GET')
-        print(dumps(resp.json(), indent=1))
+        resp, sc = self.send_request(f'/user/{uid}', 'GET')
+        if sc == 200:
+            print(dumps(resp.json(), indent=1))
+        else:
+            print(f"invalid status: {sc}")
 
     def findusers(self, searchval):
-        resp = self.send_request(f'/search/user/{searchval}', 'GET')
-        print(dumps(resp.json(), indent=1))
+        resp, sc = self.send_request(f'/search/user/{searchval}', 'GET')
+        if sc == 200:
+            print(dumps(resp.json(), indent=1))
+        else:
+            print(f"invalid status: {sc}")
 
     ##########################################
     #### Registered Command Functions ########

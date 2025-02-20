@@ -1,6 +1,6 @@
-# DERIVATIVEANDPETTYPHISHINGFRAMEWORK (DAP)
+# Phishing Framework
 
-Derivative and petty phishing framework is written in plain english so read the code to get a better understanding. This is just a reference.
+Phishing framework written in plain english so read the code to get a better understanding. This is just a reference.
 
 Oh yeah and you need a landing page server, this doesn't do that just exposes an API for use in the landing page. Use like nginx or something.
 
@@ -164,7 +164,7 @@ test.html
 
 Add a user
 ``` 
-> adduser -e "emusk@tesla.com" -f "Elon" -l "Musk" -t "CHAMPION OF FREE SPEECH?" -g spear_phish_targets 
+> adduser -e "emusk@tesla.com" -f "Elon" -l "Musk" -t "CEO" -g spear_phish_targets 
 status: 200
 {"uid":"fr3NX9SASCUbx7Lt"}
 ```

@@ -3,6 +3,7 @@ from os.path import exists
 from flask import Blueprint, request, jsonify, render_template
 
 from ..utils import *
+from ..config import template_variables
 from ..models import User
 from .. import sender as email_sender
 
@@ -50,32 +51,34 @@ def send():
     for user in users:
 
         # These are the variables that can be used in the jinja template
-        template_opts = {
-            
+        opts = {
             'first_name': user.first_name,
             'last_name': user.last_name,
             'unique_id': user.unique_id,
             'user_title': user.title,
             'link_value': link_value,
-            'date_now_1': datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC"),
-            'date_now_2': datetime.now().strftime("%Y-%m-%d %H:%M:%S UTC"),
-            'random_value_16': generate_random_string(16),
-            'random_value_5': generate_random_string(5),
-            'file_name': Config['payload_file']['file_name'],
-            'sha265': f'{get_payload_hash_sha256()}',
-            'file_size': get_payload_file_size(),
-            'file_description': "Generic Description of Field rendered within template",
         }
 
+        template_opts = opts | template_variables
+
+        vars, res = check_unused_variables_from_file(f'server/templates/{pretext_template}', template_opts)
+
+        if not res:
+            b = {
+                "status":"error",
+                "message": f"unused variables in template {pretext_template}: {vars}"
+            }
+            return jsonify(b), 500
+        
         body = render_template(
             pretext_template,
             **template_opts
         )
 
-        print(body)
-
         mime_type = 'html' if '.html' in pretext_template else 'txt'
 
         email_sender.enqueue(body, user.email, sender, envelope_sender, subject, link_value, mime_type)
 
-        return jsonify("", 200)
+        return jsonify({
+            "status": "success"
+            }), 200

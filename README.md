@@ -24,27 +24,41 @@ python3 -m flask run
 python3 -m flask run --host 0.0.0.0 
 ```
 
-### Config
-Configuration is set in `config.py`. Set this to change options.
+## Configuration
+Configuration options are set in `./server/config/options.py`. Set this to change options.
+
 ```python
-config = {
+Options = {
     "smtp": {
-        "hostname": "localhost",
+        "hostname": "example.com",
         "port": "25",
         "username": "",
         "password": ""
     },
     "throttle": {
-        "seconds" : "2",
+        "seconds" : 1,
         "jitter": ".25"
     },
     "db": {
         "sqlite": "sqlite:///dap.sqlite3"
     },
-    "payload_file": {
-        "file_name": "Filename As Seen By Victim.xls",
-        "file_path": "payloads/path-to-file-on-disk.xls",
-    },
+    "threads" : 1
+}
+```
+
+## Templates
+Templates go in the `./server/templates` folder and must be valid jinja2 templates. Certain variables are generated and exposed to the template. These can be set in the `./server/config/templates.py` code:
+
+```python
+# Define variables that can be added to the template here
+template_variables = {
+    "file_name": "File Name.pdf",
+    "file_description": "Generic File Description",
+    "date_now_1": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC"),
+    "date_now_2": datetime.now().strftime("%Y-%m-%d %H:%M:%S UTC"),
+    "random_value_16": generate_random_ascii(16),
+    "random_value_5": generate_random_ascii(5),
+    "not_real_var": "it's real now"
 }
 ```
 
@@ -156,7 +170,6 @@ Send emails. Jinja2 searches for templates in the *templates* folder by default.
 > sendemails -g test_group --subject "[INTERNAL] File Transfer Service " --sender "File Transfer Service <test@exampledomain.net>" -L https://exampledomain.net/pickup.php -e test@exampledomain.net -t test.html
 ```
 
-Templates go in the `templates` folder, list them like this:
 ```
 > listtemplates
 test.html
@@ -164,7 +177,7 @@ test.html
 
 Add a user
 ``` 
-> adduser -e "emusk@tesla.com" -f "Elon" -l "Musk" -t "CEO" -g spear_phish_targets 
+> adduser -e "emusk@tesla.com" -f "Elon" -l "Musk" -t "CHAMPION OF FREE SPEECH?" -g spear_phish_targets 
 status: 200
 {"uid":"fr3NX9SASCUbx7Lt"}
 ```
@@ -222,7 +235,7 @@ ubuntu@testing:~/dap$ ll *.log
 -rw-rw-r-- 1 ubuntu ubuntu  7645 Feb 13 22:15 02-13-23.log
 -rw-rw-r-- 1 ubuntu ubuntu  2938 Feb 14 15:30 02-14-23.log
 
-ubuntu@testing:~/dap$ tail 02-14-23.log]
+ubuntu@testing:~/dap$ tail 02-14-23.log
 ```
 
 

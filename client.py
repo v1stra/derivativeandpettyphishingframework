@@ -6,7 +6,7 @@ import shlex
 import argparse
 
 from os import listdir
-from server.config import Config
+from server.config import Options
 from server.utils import json_to_csv
 from json import dumps
 from csv import DictReader
@@ -127,7 +127,7 @@ class Shell(cmd.Cmd):
                 user_list = []
                 for row in reader:
                     user_list.append(row)
-                resp = self.send_request('/users/load', 'POST', json=user_list)
+                resp, sc = self.send_request('/users/load', 'POST', json=user_list)
                 print(resp.text)
                         
         except FileNotFoundError as e:
@@ -152,21 +152,24 @@ class Shell(cmd.Cmd):
 
     def listoptions(self):
         
-        resp = self.send_request('/config', 'GET')
+        resp, sc = self.send_request('/options', 'GET')
 
-        print(dumps(resp.json(), indent=1))
+        if sc == 200:
+            print(dumps(resp.json(), indent=1))
+        else:
+            print(resp.text)
 
         
-    def updatepayload(self, file_path):
-        """ Updates the payload with a POST request to the server """
+    # def updatepayload(self, file_path):
+    #     """ Updates the payload with a POST request to the server """
 
-        data = {
-            'file_path': file_path
-        }
+    #     data = {
+    #         'file_path': file_path
+    #     }
 
-        resp, sc = self.send_request('/config/payload', 'POST', json=data)
+    #     resp, sc = self.send_request('/options/payload', 'POST', json=data)
 
-        print(resp.text)
+    #     print(resp.text)
 
     
     def getgroup(self, group):
@@ -334,18 +337,18 @@ class Shell(cmd.Cmd):
         """ List templates in the /templates folder """
         self.listtemplates()
 
-    def do_updatepayload(self, line):
-        """ Updates the payload with a file on disk (must be accessible on server)
+    # def do_updatepayload(self, line):
+    #     """ Updates the payload with a file on disk (must be accessible on server)
 
-        Usage:
-            updatepayload path/to/file.txt
+    #     Usage:
+    #         updatepayload path/to/file.txt
 
-        Args:
-            File path that should be present on server:
-        """
-        args = shlex.split(line)
+    #     Args:
+    #         File path that should be present on server:
+    #     """
+    #     args = shlex.split(line)
 
-        self.updatepayload(args[0]) if len(args) else print('Argument required: file')
+    #     self.updatepayload(args[0]) if len(args) else print('Argument required: file')
 
 
     def do_getgroup(self, line):

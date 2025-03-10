@@ -1,12 +1,16 @@
 import smtplib
+import email 
 
-from time import sleep
 from threading import Thread, Lock
 from queue import Queue
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
-from .utils import *
+from time import sleep
+from random import uniform
+
+from .utils import log_write, log_format
+from .config import SMTPSERVER
 
 class Email:
     def __init__(self, body, recipient_email, message_sender, envelope_sender, subject, link_value, mime_type):
@@ -20,16 +24,18 @@ class Email:
 
     def send(self):
 
-        resp = ''
+        resp = f'Sending email to "{self.recipient_email}" - "{self.subject}"\n'
 
         try:
             # connect to SMTP server
-            server = smtplib.SMTP(SMTPSERVER)  # this code assumes you have a postfix server running locally
+            print(SMTPSERVER)
+            server = smtplib.SMTP(SMTPSERVER, timeout=5)  
+            print("?")
             
-            resp += f"Connected to SMTP server {SMTPSERVER}\n"
+            resp += log_format(f"Connected to SMTP server {SMTPSERVER}")
             
             # perform SMTP EHLO
-            resp += f"Sending server EHLO\n"
+            resp += log_format(f"Sending server EHLO")
 
             server.ehlo()
 
@@ -37,6 +43,7 @@ class Email:
             email_message['From'] = self.message_sender
             email_message['To'] = self.recipient_email
             email_message['Subject'] = self.subject
+            email_message['Date'] = email.utils.formatdate()
             email_message['List-Unsubscribe'] = f'<mailto:{self.envelope_sender}?subject=unsubscribe>'
 
             email_message.attach(MIMEText(self.body, self.mime_type))
@@ -49,23 +56,27 @@ class Email:
             # set recipient
             server.rcpt(self.recipient_email)
 
-            resp += f'Sending email to "{self.recipient_email}" - "{self.subject}"\n'
+
             
             # set the message data
             server.data(message)
 
             # done
-            resp += f"Sending completed.\n"
+            resp += log_format(f"Sending completed.")
             server.quit()
+
             
         except (ConnectionRefusedError, smtplib.SMTPConnectError, smtplib.SMTPServerDisconnected, smtplib.SMTPResponseException, smtplib.SMTPSenderRefused, smtplib.SMTPRecipientsRefused) as e:
-            resp += f"An SMTP error occured: {e}"
+            resp += log_format(f"An SMTP error occured: {e}")
+        except TimeoutError as e:
+            resp += log_format(f"The connection to {SMTPSERVER} timed out")
 
         return resp
 
 
 class Sender:
     threads = []
+    
     def __init__(self, n_threads, sleep_time, jitter):
         self.n_threads = n_threads
         self.sleep_time = sleep_time
@@ -79,13 +90,16 @@ class Sender:
     def worker(self):
 
         while True:
+            print("waiting")
             email = self.queue.get()
+            print("got email")
             resp = email.send()
-
+            print("email sent")
             with self.log_file_lock:
                 log_write(resp)
 
-            sleep(generate_throttle(self.sleep_time, self.jitter))
+            print("sleeping")
+            sleep(self.generate_throttle(self.sleep_time, self.jitter))
             
             self.queue.task_done()
 
@@ -95,4 +109,8 @@ class Sender:
             self.threads.append(thread)
             thread.start()
 
-
+    def generate_throttle(self, seconds: int, jitter: float) -> float:
+        """ Generates a floating point representation of sleep time with jitter """
+        low = seconds - (seconds * jitter)
+        high = seconds + (seconds * jitter)
+        return uniform(low, high)

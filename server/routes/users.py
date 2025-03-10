@@ -3,7 +3,7 @@ from sqlalchemy.exc import IntegrityError
 from base64 import b64encode
 
 from ..utils import *
-from ..config import Config
+from ..config import Options
 from ..models import User
 
 from .. import db
@@ -34,7 +34,7 @@ def load_users():
                 title = user_data.get('title')
                 email = user_data.get('email')
                 group_name = user_data.get('group_name')
-                unique_id = generate_random_string(16)
+                unique_id = generate_random_ascii(16)
 
                 try:
                     user = User(first_name=first_name, last_name=last_name, title=title, email=email, group_name=group_name, unique_id=unique_id)
@@ -86,14 +86,14 @@ def user_clicked(uid):
     user = User.query.filter_by(unique_id=uid).first()
 
     if user:
-        log_write(f'User {user.email} clicked the button and was served the {Config["payload_file"]["file_name"]} file.')
+        log_write(f'User {user.email} clicked the button and was served the {Options["payload_file"]["file_name"]} file.')
 
-        with open(Config["payload_file"]["file_path"], 'rb') as f:
+        with open(Options["payload_file"]["file_path"], 'rb') as f:
 
             return jsonify(
                     {
                         "data": b64encode(f.read()).decode('utf-8'),
-                        "name": Config['payload_file']['file_name']
+                        "name": Options['payload_file']['file_name']
                     }
                 )
 
@@ -119,7 +119,7 @@ def add_user():
     title = data.get('title')
     email = data.get('email')
     group_name = data.get('group_name')
-    unique_id = generate_random_string(16)
+    unique_id = generate_random_ascii(16)
 
     if not all([first_name, last_name, email, group_name]):
         return jsonify({'error':'missing required fields'})

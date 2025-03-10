@@ -1,8 +1,8 @@
-# configuration options go here
+# server configuration options go here
 
-Config = {
+Options = {
     "smtp": {
-        "hostname": "localhost",
+        "hostname": "mail.mail-relay.it.com",
         "port": "25",
         "username": "",
         "password": ""
@@ -13,10 +13,6 @@ Config = {
     },
     "db": {
         "sqlite": "sqlite:///dap.sqlite3"
-    },
-    "payload_file": {
-        "file_name": "Filename As Seen By Victim.xls",
-        "file_path": "payloads/path-to-file-on-disk.xls",
     },
     "threads" : 1
 }
